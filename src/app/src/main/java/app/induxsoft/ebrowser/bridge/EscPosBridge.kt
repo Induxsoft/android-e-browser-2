@@ -186,6 +186,15 @@ class EscPosBridge(
         Thread { try { p?.disconnectPrinter() } catch (e: Exception) { } }.start()
     }
 
+    @JavascriptInterface
+    fun disconnectPrinter() {
+        try {
+            printer?.disconnectPrinter()
+        } catch (e: Exception) {
+            Log.w(Constants.TAG, "error al desconectar la impresora", e)
+        }
+    }
+
     // -------------------------------------------------------------- impresion
 
     @JavascriptInterface
