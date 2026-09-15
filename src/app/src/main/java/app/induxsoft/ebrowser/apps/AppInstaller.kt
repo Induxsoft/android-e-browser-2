@@ -100,6 +100,7 @@ class AppInstaller(
         var theme = "#CC0000"
         var iconUrl: String? = null
 
+        var manifestError: String? = null
         if (req.manifestUrl != null) {
             try {
                 val m = JSONObject(Net.readText(req.manifestUrl))
@@ -114,6 +115,7 @@ class AppInstaller(
                 m.optString("theme_color").takeIf { it.isNotBlank() }?.let { theme = it }
                 iconUrl = bestIcon(m, req.manifestUrl)
             } catch (e: Exception) {
+                manifestError = "${e.javaClass.simpleName}: ${e.message}"
                 Log.w(Constants.TAG, "manifest no disponible: ${e.message}")
             }
         }
@@ -162,12 +164,28 @@ class AppInstaller(
             // 3b. Precache
             var bytes = 0L
             var count = 0
-            if (req.precache.isNotEmpty()) {
+            val precacheErrors = JSONArray()
+            // Si la app declara precache, va a quedar marcada como "local" y
+            // apps.open() navegara directo a startUrl. Sin esto, es facil que
+            // el propio start_url quede fuera de la lista (el desarrollador
+            // solo precachea scripts sueltos, como paso aqui) y la app "local"
+            // termine sin poder abrir sin red -justo lo que este modo promete.
+            val precacheList: List<String> = if (req.precache.isNotEmpty()) {
+                val startNoFragment = startUrl.substringBefore('#')
+                if (req.precache.any { it.substringBefore('#') == startNoFragment }) {
+                    req.precache
+                } else {
+                    req.precache + startUrl
+                }
+            } else {
+                req.precache
+            }
+            if (precacheList.isNotEmpty()) {
                 val resDir = File(tmpDir, "res")
                 resDir.mkdirs()
                 val index = JSONObject()
-                val total = req.precache.size
-                req.precache.forEachIndexed { i, url ->
+                val total = precacheList.size
+                precacheList.forEachIndexed { i, url ->
                     try {
                         val fname = ResourceCache.fileNameFor(url.substringBefore('#'))
                         val dest = File(resDir, fname)
@@ -186,7 +204,9 @@ class AppInstaller(
                     } catch (e: Exception) {
                         // Un recurso caido no tumba la instalacion: se registra y
                         // esa URL simplemente ira a la red cuando se pida.
-                        Log.w(Constants.TAG, "precache omitido $url: ${e.message}")
+                        val msg = "${e.javaClass.simpleName}: ${e.message}"
+                        Log.w(Constants.TAG, "precache omitido $url: $msg")
+                        precacheErrors.put(JSONObject().put("url", url).put("error", msg))
                     }
                     progress?.on(i + 1, total)
                 }
@@ -218,7 +238,10 @@ class AppInstaller(
             registry.save(app)
             cache.reload()
 
-            return JSONObject().put("ok", true).put("app", app.toJson())
+            return JSONObject().put("ok", true).put("app", app.toJson()).apply {
+                if (manifestError != null) put("manifest_error", manifestError)
+                if (precacheErrors.length() > 0) put("precache_errors", precacheErrors)
+            }
 
         } catch (e: Exception) {
             Files.deleteTree(tmpDir)

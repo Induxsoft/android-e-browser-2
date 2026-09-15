@@ -4,13 +4,22 @@ import android.content.Context
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
 import android.os.Build
+import android.webkit.CookieManager
 import java.io.File
 import java.io.InputStream
 import java.io.OutputStream
 import java.net.HttpURLConnection
 import java.net.URL
 import java.security.MessageDigest
+import java.security.SecureRandom
+import java.security.cert.X509Certificate
 import java.util.UUID
+import javax.net.ssl.HostnameVerifier
+import javax.net.ssl.HttpsURLConnection
+import javax.net.ssl.SSLContext
+import javax.net.ssl.SSLSocketFactory
+import javax.net.ssl.TrustManager
+import javax.net.ssl.X509TrustManager
 
 object Hashing {
 
@@ -97,6 +106,35 @@ object Mime {
 
 object Net {
 
+    /**
+     * El WebView ya tolera certificados no confiables (autofirmados, CA privada
+     * de LAN): pregunta una vez por host en onReceivedSslError y lo recuerda.
+     * Esta descarga nativa (manifest/precache/icono) es un HttpsURLConnection
+     * aparte que usa el validador estricto del sistema, sin ese mecanismo de
+     * "confiar en este servidor" ni forma de preguntar (corre en segundo plano,
+     * sin UI). Sin esto, cualquier servidor con certificado propio -normal en
+     * los despliegues de LAN que describe el manual- carga bien en el WebView
+     * pero el precache/manifest fallan siempre con SSLHandshakeException.
+     *
+     * Replica aqui la misma postura de confianza que ya tiene la app para el
+     * WebView. Nota de seguridad: a diferencia del dialogo del WebView, esto
+     * no pregunta ni se limita por host -aplica a toda descarga nativa que
+     * haga la app, no solo la del sitio ya aceptado.
+     */
+    private val trustAllCerts: Array<TrustManager> = arrayOf(object : X509TrustManager {
+        override fun checkClientTrusted(chain: Array<out X509Certificate>?, authType: String?) {}
+        override fun checkServerTrusted(chain: Array<out X509Certificate>?, authType: String?) {}
+        override fun getAcceptedIssuers(): Array<X509Certificate> = arrayOf()
+    })
+
+    private val lenientSocketFactory: SSLSocketFactory by lazy {
+        SSLContext.getInstance("TLS").apply {
+            init(null, trustAllCerts, SecureRandom())
+        }.socketFactory
+    }
+
+    private val trustAllHostnames = HostnameVerifier { _, _ -> true }
+
     fun isOnline(ctx: Context): Boolean {
         val cm = ctx.getSystemService(Context.CONNECTIVITY_SERVICE) as? ConnectivityManager
             ?: return false
@@ -112,12 +150,23 @@ object Net {
 
     fun open(url: String, etag: String? = null, timeoutMs: Int = 15000): HttpURLConnection {
         val c = URL(url).openConnection() as HttpURLConnection
+        if (c is HttpsURLConnection) {
+            c.sslSocketFactory = lenientSocketFactory
+            c.hostnameVerifier = trustAllHostnames
+        }
         c.connectTimeout = timeoutMs
         c.readTimeout = timeoutMs
         c.instanceFollowRedirects = true
         c.setRequestProperty("Accept-Encoding", "identity")
         c.setRequestProperty("User-Agent", "e-browser-android")
         if (etag != null) c.setRequestProperty("If-None-Match", etag)
+        // Reenvia la cookie de sesion que el WebView ya tiene para esta URL.
+        // Sin esto, cualquier recurso de precache/manifest que exija sesion
+        // (rutas autenticadas, por tenant, etc.) falla en silencio aqui aunque
+        // la pagina lo cargue perfecto dentro del WebView.
+        CookieManager.getInstance().getCookie(url)?.let { cookie ->
+            c.setRequestProperty("Cookie", cookie)
+        }
         return c
     }
 
