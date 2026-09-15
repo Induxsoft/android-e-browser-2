@@ -1,0 +1,11 @@
+<resources>
+    <!-- e-browser siempre en claro: en caja se usa con luz ambiental alta
+         y el contraste consistente importa mas que seguir el sistema. -->
+    <style name="Theme.InduxsoftEBrowser" parent="Theme.MaterialComponents.Light.NoActionBar">
+        <item name="colorPrimary">@color/induxsoft_rojo</item>
+        <item name="colorPrimaryVariant">@color/induxsoft_rojo_oscuro</item>
+        <item name="colorOnPrimary">@color/blanco</item>
+        <item name="android:statusBarColor">@color/induxsoft_rojo</item>
+        <item name="android:windowBackground">@color/blanco</item>
+    </style>
+</resources>

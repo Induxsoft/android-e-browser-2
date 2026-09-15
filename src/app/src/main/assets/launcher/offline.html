@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Sin conexión</title>
+<style>
+  :root{--rojo:#CC0000;--tinta:#1B1B1B;--tenue:#6E6E73;--linea:#E2E2E6;--superficie:#F4F4F6}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
+    color:var(--tinta);background:#fff;min-height:100vh;
+    display:flex;align-items:center;justify-content:center;padding:24px;line-height:1.5
+  }
+  .caja{max-width:34ch;text-align:center}
+  .senal{
+    width:72px;height:72px;border-radius:50%;background:var(--superficie);
+    display:flex;align-items:center;justify-content:center;margin:0 auto 20px;color:var(--tenue)
+  }
+  h1{font-size:20px;font-weight:600;margin-bottom:8px}
+  p{color:var(--tenue);font-size:15px;margin-bottom:6px}
+  .dir{
+    font-size:12.5px;color:var(--tenue);background:var(--superficie);border-radius:8px;
+    padding:9px 11px;margin:16px 0 22px;word-break:break-all;text-align:left
+  }
+  .acciones{display:flex;flex-direction:column;gap:10px}
+  button{
+    font:inherit;min-height:52px;border-radius:9px;font-weight:600;font-size:15px;
+    border:1px solid var(--linea);background:#fff;color:inherit;cursor:pointer
+  }
+  button.principal{background:var(--rojo);color:#fff;border-color:var(--rojo)}
+</style>
+</head>
+<body>
+  <div class="caja">
+    <div class="senal">
+      <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7">
+        <path d="M1 1l22 22M16.7 16.7A10.9 10.9 0 0 0 12 20l-3-3a7 7 0 0 1 4.2-2M5 12.6a11 11 0 0 1 4-2.5M2 8.8a16 16 0 0 1 5-3.2M10.7 5.1A16 16 0 0 1 22 8.8l-3 3a11 11 0 0 0-3.7-2.2"/>
+      </svg>
+    </div>
+    <h1 id="titulo">No se pudo abrir</h1>
+    <p id="detalle">Revisa que el equipo tenga conexión y vuelve a intentarlo.</p>
+    <div class="dir" id="dir" hidden></div>
+    <div class="acciones">
+      <button class="principal" id="reintentar">Reintentar</button>
+      <button id="inicio">Ir a la pantalla de inicio</button>
+    </div>
+  </div>
+<script>
+(function(){
+  var p = new URLSearchParams(location.search);
+  var url = p.get("url") || "";
+  var nombre = p.get("name") || "";
+  if (nombre) {
+    document.getElementById("titulo").textContent = "No se pudo abrir " + nombre;
+    document.getElementById("detalle").textContent =
+      "Esta aplicación necesita Internet. Revisa la conexión del equipo y vuelve a intentarlo.";
+  }
+  if (url) {
+    var d = document.getElementById("dir");
+    d.hidden = false;
+    d.textContent = url;
+  }
+  document.getElementById("reintentar").addEventListener("click", function(){
+    if (url) location.href = url; else history.back();
+  });
+  document.getElementById("inicio").addEventListener("click", function(){
+    if (window.ebrowser) window.ebrowser.apps.exit();
+    else location.href = "/launcher/browser.html";
+  });
+})();
+</script>
+</body>
+</html>

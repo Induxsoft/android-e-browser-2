@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light">
+<title>Enterprise Browser</title>
+<style>
+  :root{
+    --rojo:#CC0000;
+    --rojo-hundido:#A30000;
+    --tinta:#1B1B1B;
+    --tenue:#6E6E73;
+    --linea:#E2E2E6;
+    --superficie:#F4F4F6;
+    --papel:#FFFFFF;
+    --verde:#0F8A3C;
+    --radio:10px;
+    --tap:56px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  html,body{height:100%}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+    color:var(--tinta);background:var(--papel);
+    font-size:16px;line-height:1.45;
+    display:flex;flex-direction:column;
+    padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  }
+  button,input,select{font:inherit;color:inherit}
+  button{background:none;border:0;cursor:pointer}
+  :focus-visible{outline:3px solid var(--rojo);outline-offset:2px}
+
+  /* ---------- encabezado ---------- */
+  header{padding:18px 16px 6px;flex:0 0 auto}
+  .marca{display:flex;align-items:baseline;gap:0;font-size:22px;letter-spacing:-.015em}
+  .marca .e{
+    background:var(--rojo);color:#fff;font-weight:700;
+    width:26px;height:26px;display:inline-flex;align-items:center;justify-content:center;
+    border-radius:4px;font-size:20px;line-height:1;position:relative;top:3px
+  }
+  .marca b{font-weight:700;color:var(--rojo)}
+  .marca .resto{font-weight:600;margin-left:.34em}
+
+  /* ---------- barra de direccion ---------- */
+  .barra{
+    display:flex;align-items:center;gap:6px;margin:14px 16px 0;
+    background:var(--superficie);border-radius:var(--radio);padding:4px 4px 4px 8px;
+    flex:0 0 auto
+  }
+  .barra select{
+    border:0;background:transparent;color:var(--rojo);font-weight:600;
+    padding:10px 2px;min-height:var(--tap)
+  }
+  .barra input{
+    flex:1;min-width:0;border:0;background:transparent;padding:10px 4px;
+    min-height:var(--tap);font-weight:500
+  }
+  .barra input::placeholder{color:var(--tenue);font-weight:400}
+  .ir{
+    background:var(--papel);border-radius:8px;min-width:48px;min-height:48px;
+    display:flex;align-items:center;justify-content:center;color:var(--rojo)
+  }
+  .ir:active{background:var(--linea)}
+  body.sin-barra .barra{display:none}
+
+  /* ---------- rejilla de aplicaciones ---------- */
+  main{flex:1 1 auto;overflow-y:auto;padding:18px 16px 8px;-webkit-overflow-scrolling:touch}
+  .rejilla{
+    display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));
+    gap:14px
+  }
+  .app{
+    display:flex;flex-direction:column;align-items:center;gap:8px;
+    padding:10px 4px;border-radius:var(--radio);text-align:center;width:100%
+  }
+  .app:active{background:var(--superficie)}
+  .icono{
+    width:64px;height:64px;border-radius:14px;
+    display:flex;align-items:center;justify-content:center;
+    background:var(--rojo);color:#fff;font-size:28px;font-weight:700;
+    box-shadow:inset 0 0 0 1px rgba(0,0,0,.06);position:relative;flex:0 0 auto
+  }
+  .icono img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;
+    display:block;border-radius:14px}
+  .icono .ini{line-height:1}
+  .icono.remota{background:var(--tinta)}
+  .nube{
+    position:absolute;right:-5px;bottom:-5px;width:22px;height:22px;border-radius:50%;
+    background:var(--papel);color:var(--tenue);font-size:13px;line-height:1;
+    display:flex;align-items:center;justify-content:center;
+    box-shadow:0 0 0 1px var(--linea);z-index:2
+  }
+  .rotulo{
+    font-size:13px;line-height:1.25;font-weight:500;
+    display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;
+    word-break:break-word
+  }
+
+  /* ---------- vacio ---------- */
+  .vacio{
+    border:1px dashed var(--linea);border-radius:var(--radio);
+    padding:26px 20px;text-align:center;color:var(--tenue);margin-top:6px
+  }
+  .vacio h2{font-size:17px;font-weight:600;color:var(--tinta);margin-bottom:6px}
+  .vacio p{font-size:14px;max-width:34ch;margin:0 auto}
+
+  /* ---------- pie ---------- */
+  footer{
+    flex:0 0 auto;border-top:1px solid var(--linea);
+    display:flex;align-items:center;justify-content:space-between;
+    padding:6px 10px 8px;gap:8px
+  }
+  .engrane{
+    min-width:var(--tap);min-height:48px;display:flex;align-items:center;gap:7px;
+    padding:0 12px;border-radius:8px;color:var(--tenue);font-size:14px
+  }
+  .engrane:active{background:var(--superficie)}
+  .pie-info{font-size:12px;color:var(--tenue);padding-right:6px;text-align:right}
+  .punto{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--verde);margin-right:5px}
+  .punto.off{background:var(--tenue)}
+
+  /* ---------- hoja modal ---------- */
+  .velo{
+    position:fixed;inset:0;background:rgba(0,0,0,.45);
+    display:none;align-items:flex-end;z-index:50
+  }
+  .velo.abierto{display:flex}
+  .hoja{
+    background:var(--papel);width:100%;max-height:92vh;overflow-y:auto;
+    border-radius:16px 16px 0 0;padding:6px 0 max(16px,env(safe-area-inset-bottom))
+  }
+  .asa{width:38px;height:4px;border-radius:2px;background:var(--linea);margin:8px auto 4px}
+  .hoja h2{font-size:18px;font-weight:600;padding:10px 20px 4px}
+  .hoja h3{font-size:13px;font-weight:600;color:var(--tenue);padding:18px 20px 4px}
+  .fila{
+    display:flex;align-items:center;gap:12px;padding:12px 20px;min-height:var(--tap);
+    border-bottom:1px solid var(--linea)
+  }
+  .fila:last-child{border-bottom:0}
+  .fila label{flex:1;font-size:15px}
+  .fila .ayuda{display:block;font-size:12.5px;color:var(--tenue);margin-top:2px;max-width:42ch}
+  .fila input[type=text],.fila input[type=password],.fila input[type=url],.fila select{
+    border:1px solid var(--linea);border-radius:8px;padding:11px 10px;
+    background:var(--papel);min-height:46px;width:100%
+  }
+  .fila.apilada{flex-direction:column;align-items:stretch;gap:8px}
+  input[type=checkbox]{width:26px;height:26px;accent-color:var(--rojo);flex:0 0 auto}
+  .acciones{display:flex;gap:10px;padding:16px 20px 4px}
+  .btn{
+    flex:1;min-height:50px;border-radius:9px;font-weight:600;font-size:15px;
+    display:flex;align-items:center;justify-content:center;border:1px solid var(--linea)
+  }
+  .btn.principal{background:var(--rojo);color:#fff;border-color:var(--rojo)}
+  .btn.principal:active{background:var(--rojo-hundido)}
+  .btn.peligro{color:var(--rojo)}
+  .btn:disabled{opacity:.5}
+  .lista-apps .fila{gap:10px}
+  .lista-apps .mini{width:34px;height:34px;border-radius:8px;overflow:hidden;background:var(--rojo);
+    color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:15px;
+    flex:0 0 auto;position:relative}
+  .lista-apps .mini img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+  .lista-apps .datos{flex:1;min-width:0}
+  .lista-apps .datos b{display:block;font-size:15px;font-weight:600}
+  .lista-apps .datos small{display:block;font-size:12px;color:var(--tenue);
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .aviso{margin:12px 20px;padding:12px;border-radius:8px;background:var(--superficie);
+    font-size:13.5px;color:var(--tenue)}
+  .aviso.malo{background:#FDECEC;color:#8A1010}
+  .aviso.bien{background:#E9F6EE;color:#0B5C2A}
+  .cargando{padding:26px;text-align:center;color:var(--tenue)}
+  @media (prefers-reduced-motion:no-preference){
+    .velo.abierto .hoja{animation:sube .18s ease-out}
+    @keyframes sube{from{transform:translateY(14px)}to{transform:none}}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="marca"><span class="e">e</span><b>nterprise</b><span class="resto">Browser</span></div>
+</header>
+
+<div class="barra" id="barra">
+  <select id="protocolo" aria-label="Protocolo">
+    <option value="https://">https://</option>
+    <option value="http://">http://</option>
+  </select>
+  <input type="search" id="url" placeholder="Escribe una dirección" autocapitalize="off"
+         autocorrect="off" spellcheck="false" inputmode="url" aria-label="Dirección">
+  <button class="ir" id="btnIr" aria-label="Abrir dirección">
+    <svg width="22" height="22" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+      <path d="M1 8a.5.5 0 0 1 .5-.5h11.8l-3.15-3.15a.5.5 0 1 1 .7-.7l4 4a.5.5 0 0 1 0 .7l-4 4a.5.5 0 0 1-.7-.7L13.3 8.5H1.5A.5.5 0 0 1 1 8z"/>
+    </svg>
+  </button>
+</div>
+
+<main>
+  <div class="rejilla" id="rejilla"></div>
+  <div class="vacio" id="vacio" hidden>
+    <h2>Todavía no hay aplicaciones</h2>
+    <p>Abre la dirección de tu sistema. Si es compatible, te ofrecerá instalarse aquí.
+       También puedes agregar un acceso directo desde la configuración.</p>
+  </div>
+</main>
+
+<footer>
+  <button class="engrane" id="btnEngrane" aria-label="Configuración">
+    <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+         stroke-width="1.8" aria-hidden="true">
+      <circle cx="12" cy="12" r="3"/>
+      <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9v0a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+    </svg>
+    Configuración
+  </button>
+  <div class="pie-info" id="pieInfo"></div>
+</footer>
+
+<!-- Hoja de configuración -->
+<div class="velo" id="velo">
+  <div class="hoja" id="hoja" role="dialog" aria-modal="true" aria-label="Configuración">
+    <div class="asa"></div>
+    <div class="cargando" id="hojaCarga">Cargando…</div>
+    <div id="hojaCuerpo" hidden></div>
+  </div>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  var EB = window.ebrowser || null;
+  var $ = function (id) { return document.getElementById(id); };
+  var apps = [], cfg = {}, bloqueo = { locked: false, unlocked: true }, infoLanzador = {};
+
+  function esc(s) {
+    return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+    });
+  }
+  function inicial(nombre) {
+    var t = (nombre || "?").trim();
+    return t ? t.charAt(0).toUpperCase() : "?";
+  }
+
+  /* ------------------------------------------------------ rejilla de apps */
+
+  function pintarApps() {
+    var g = $("rejilla"), v = $("vacio");
+    g.innerHTML = "";
+    if (!apps.length) { v.hidden = false; return; }
+    v.hidden = true;
+
+    apps.forEach(function (a) {
+      var b = document.createElement("button");
+      b.className = "app";
+      b.type = "button";
+      b.setAttribute("aria-label", a.name);
+      var local = a.kind === "local";
+      b.innerHTML =
+        '<span class="icono' + (local ? "" : " remota") + '">' +
+          '<img src="/appicon/' + encodeURIComponent(a.app_id) + '.png" alt="" ' +
+               'onerror="this.remove()">' +
+          (local ? "" : '<span class="nube" title="Necesita Internet" aria-hidden="true">' +
+             '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" ' +
+             'stroke="currentColor" stroke-width="2.2" stroke-linecap="round" ' +
+             'stroke-linejoin="round"><path d="M18 17H7A4 4 0 0 1 7 9a5.5 5.5 0 0 1 10.5 1.5' +
+             'A3.5 3.5 0 0 1 18 17z"/></svg></span>') +
+          '<span class="ini">' + esc(inicial(a.name)) + '</span>' +
+        '</span>' +
+        '<span class="rotulo">' + esc(a.name) + '</span>';
+
+      // Si la imagen carga, se oculta la inicial de respaldo.
+      var img = b.querySelector("img"), ini = b.querySelector(".ini");
+      if (img) img.addEventListener("load", function () { ini.style.display = "none"; });
+
+      b.addEventListener("click", function () { abrirApp(a); });
+      var t = null;
+      b.addEventListener("touchstart", function () {
+        t = setTimeout(function () { abrirConfig("apps"); }, 600);
+      }, { passive: true });
+      ["touchend", "touchmove", "touchcancel"].forEach(function (ev) {
+        b.addEventListener(ev, function () { clearTimeout(t); }, { passive: true });
+      });
+      g.appendChild(b);
+    });
+  }
+
+  function abrirApp(a) {
+    if (EB) EB.apps.open(a.app_id).catch(function () { location.href = a.start_url; });
+    else location.href = a.start_url;
+  }
+
+  /* ---------------------------------------------- barra de direccion */
+
+  function navegar() {
+    var inp = $("url"), pro = $("protocolo");
+    var t = (inp.value || "").trim();
+    if (!t) { inp.focus(); return; }
+    var destino = /^https?:\/\//i.test(t) ? t : pro.value + t;
+    try { localStorage.setItem("ultima_url", t); } catch (e) {}
+    location.href = destino;
+  }
+
+  $("btnIr").addEventListener("click", navegar);
+  $("url").addEventListener("search", navegar);
+  $("url").addEventListener("keydown", function (e) {
+    if (e.key === "Enter") { e.preventDefault(); navegar(); }
+  });
+  try {
+    var u = localStorage.getItem("ultima_url");
+    if (u) $("url").value = u;
+  } catch (e) {}
+
+  /* ------------------------------------------------------ configuracion */
+
+  $("btnEngrane").addEventListener("click", function () { abrirConfig(); });
+  $("velo").addEventListener("click", function (e) {
+    if (e.target === $("velo")) cerrarConfig();
+  });
+
+  function cerrarConfig() { $("velo").classList.remove("abierto"); }
+
+  function abrirConfig(seccion) {
+    $("velo").classList.add("abierto");
+    $("hojaCarga").hidden = false;
+    $("hojaCuerpo").hidden = true;
+    recargarEstado().then(function () {
+      if (bloqueo.locked && !bloqueo.unlocked) pintarDesbloqueo();
+      else pintarAjustes(seccion);
+    }).catch(function (e) {
+      pintarError(e.message || "No se pudo cargar la configuración");
+    });
+  }
+
+  function recargarEstado() {
+    if (!EB) return Promise.resolve();
+    return Promise.all([
+      EB.config.get(),
+      EB.apps.list(),
+      EB.launcher.info()
+    ]).then(function (r) {
+      cfg = r[0].config || {};
+      bloqueo = { locked: !!r[0].locked, unlocked: !!r[0].unlocked };
+      apps = r[1] || [];
+      infoLanzador = (r[2] && r[2].info) || {};
+      pintarApps();
+      pintarPie();
+    });
+  }
+
+  function mostrar(html) {
+    $("hojaCarga").hidden = true;
+    var c = $("hojaCuerpo");
+    c.hidden = false;
+    c.innerHTML = html;
+    return c;
+  }
+
+  function pintarError(msg) {
+    mostrar('<h2>Configuración</h2><div class="aviso malo">' + esc(msg) + '</div>' +
+            '<div class="acciones"><button class="btn" data-cerrar>Cerrar</button></div>');
+    enlazarCierre();
+  }
+
+  function pintarDesbloqueo() {
+    mostrar(
+      '<h2>Configuración protegida</h2>' +
+      '<div class="fila apilada">' +
+        '<label for="pwd">Escribe la contraseña para continuar</label>' +
+        '<input type="password" id="pwd" inputmode="numeric" autocomplete="off">' +
+        '<div class="aviso" id="msgPwd" hidden></div>' +
+      '</div>' +
+      '<div class="acciones">' +
+        '<button class="btn" data-cerrar>Cancelar</button>' +
+        '<button class="btn principal" id="btnDesbloquear">Desbloquear</button>' +
+      '</div>' +
+      '<div class="aviso">Si perdiste la contraseña, la única forma de recuperar el acceso ' +
+      'es desinstalar e-browser, lo que también borra las aplicaciones instaladas.</div>'
+    );
+    enlazarCierre();
+    $("pwd").focus();
+    $("btnDesbloquear").addEventListener("click", function () {
+      EB.lock.unlock($("pwd").value).then(function () {
+        bloqueo.unlocked = true;
+        pintarAjustes();
+      }).catch(function () {
+        var m = $("msgPwd");
+        m.hidden = false; m.className = "aviso malo";
+        m.textContent = "La contraseña no coincide.";
+        $("pwd").value = ""; $("pwd").focus();
+      });
+    });
+  }
+
+  function pintarAjustes(seccion) {
+    var listaApps = apps.map(function (a) {
+      return '<div class="fila">' +
+        '<span class="mini"><img src="/appicon/' + encodeURIComponent(a.app_id) +
+          '.png" alt="" onerror="this.remove()">' + esc(inicial(a.name)) + '</span>' +
+        '<span class="datos"><b>' + esc(a.name) + '</b>' +
+          '<small>' + (a.kind === "local" ? "Abre sin Internet" : "Necesita Internet") +
+          ' · ' + esc(a.origin) + '</small></span>' +
+        '<button class="btn peligro" style="flex:0 0 auto;min-width:96px" ' +
+          'data-quitar="' + esc(a.app_id) + '">Quitar</button>' +
+      '</div>';
+    }).join("") || '<div class="aviso">Aún no hay aplicaciones instaladas.</div>';
+
+    mostrar(
+      '<h2>Configuración</h2>' +
+
+      '<h3>Pantalla de inicio</h3>' +
+      '<div class="fila">' +
+        '<label for="ocultar">Ocultar la barra de dirección' +
+          '<span class="ayuda">Deja solo las aplicaciones a la vista. Esta pantalla ' +
+          'sigue estando disponible desde el engrane.</span></label>' +
+        '<input type="checkbox" id="ocultar"' + (cfg.hide_address_bar ? " checked" : "") + '>' +
+      '</div>' +
+      '<div class="fila apilada">' +
+        '<label for="autoAbrir">Abrir una aplicación al encender' +
+          '<span class="ayuda">El equipo entra directo a ella.</span></label>' +
+        '<select id="autoAbrir">' +
+          '<option value="">Mostrar esta pantalla</option>' +
+          apps.map(function (a) {
+            return '<option value="' + esc(a.app_id) + '"' +
+              (cfg.auto_open === a.app_id ? " selected" : "") + '>' + esc(a.name) + '</option>';
+          }).join("") +
+        '</select>' +
+      '</div>' +
+      '<div class="fila">' +
+        '<label for="pantalla">Mantener la pantalla encendida</label>' +
+        '<input type="checkbox" id="pantalla"' + (cfg.keep_screen_on ? " checked" : "") + '>' +
+      '</div>' +
+
+      '<h3>Aplicaciones</h3>' +
+      '<div class="lista-apps">' + listaApps + '</div>' +
+      '<div class="acciones"><button class="btn" id="btnAgregar">Agregar acceso directo</button></div>' +
+
+      '<h3>Contraseña</h3>' +
+      '<div class="fila">' +
+        '<label>' + (bloqueo.locked
+          ? "La configuración está protegida."
+          : "La configuración no tiene contraseña.") +
+          '<span class="ayuda">Evita que se cambien estos ajustes desde el equipo. ' +
+          'No hay forma de recuperarla si se pierde.</span></label>' +
+      '</div>' +
+      '<div class="fila apilada">' +
+        '<input type="password" id="nuevaPwd" placeholder="' +
+          (bloqueo.locked ? "Contraseña nueva" : "Contraseña") + '" autocomplete="off">' +
+        '<div class="aviso" id="msgCfg" hidden></div>' +
+      '</div>' +
+      '<div class="acciones">' +
+        (bloqueo.locked
+          ? '<button class="btn peligro" id="btnQuitarPwd">Quitar contraseña</button>' : '') +
+        '<button class="btn principal" id="btnGuardarPwd">' +
+          (bloqueo.locked ? "Cambiar" : "Establecer") + '</button>' +
+      '</div>' +
+
+      '<h3>Actualizaciones</h3>' +
+      '<div class="fila">' +
+        '<label for="autoAct">Actualizar esta pantalla automáticamente' +
+          '<span class="ayuda">Se aplica al siguiente encendido.</span></label>' +
+        '<input type="checkbox" id="autoAct"' + (cfg.auto_update ? " checked" : "") + '>' +
+      '</div>' +
+      '<div class="fila">' +
+        '<label for="canal">Canal</label>' +
+        '<select id="canal" style="max-width:160px">' +
+          '<option value="stable"' + (cfg.channel === "stable" ? " selected" : "") + '>Estable</option>' +
+          '<option value="beta"' + (cfg.channel === "beta" ? " selected" : "") + '>Beta</option>' +
+        '</select>' +
+      '</div>' +
+      '<div class="acciones">' +
+        '<button class="btn" id="btnBuscar">Buscar ahora</button>' +
+      '</div>' +
+      '<div class="aviso" id="msgAct">Pantalla ' + esc(infoLanzador.served_version || 0) +
+        ' · e-browser ' + esc(EB ? EB.appVersion : "?") + '</div>' +
+
+      '<div class="acciones"><button class="btn" data-cerrar>Cerrar</button></div>'
+    );
+
+    enlazarCierre();
+    enlazarAjustes();
+    if (seccion === "apps") {
+      var h = $("hoja").querySelectorAll("h3")[1];
+      if (h) h.scrollIntoView({ block: "start" });
+    }
+  }
+
+  function enlazarCierre() {
+    Array.prototype.forEach.call(
+      $("hojaCuerpo").querySelectorAll("[data-cerrar]"),
+      function (b) { b.addEventListener("click", cerrarConfig); }
+    );
+  }
+
+  function aviso(txt, clase) {
+    var m = $("msgCfg");
+    if (!m) return;
+    m.hidden = false;
+    m.className = "aviso " + (clase || "");
+    m.textContent = txt;
+  }
+
+  function enlazarAjustes() {
+    function guardar(patch) {
+      return EB.config.set(patch).then(function (r) { cfg = r.config; })
+        .catch(function (e) { aviso("No se pudo guardar: " + e.message, "malo"); });
+    }
+
+    $("ocultar").addEventListener("change", function () {
+      guardar({ hide_address_bar: this.checked }).then(aplicarCortina);
+    });
+    $("pantalla").addEventListener("change", function () {
+      guardar({ keep_screen_on: this.checked });
+    });
+    $("autoAbrir").addEventListener("change", function () {
+      guardar({ auto_open: this.value });
+    });
+    $("autoAct").addEventListener("change", function () {
+      guardar({ auto_update: this.checked });
+    });
+    $("canal").addEventListener("change", function () {
+      guardar({ channel: this.value });
+    });
+
+    $("btnBuscar").addEventListener("click", function () {
+      var b = this; b.disabled = true; b.textContent = "Buscando…";
+      EB.launcher.check(true).then(function (r) {
+        $("msgAct").className = "aviso bien";
+        $("msgAct").textContent = r.status === "pending"
+          ? "Hay una versión nueva. Se aplicará al reiniciar el equipo."
+          : "Ya tienes la versión más reciente.";
+      }).catch(function (e) {
+        $("msgAct").className = "aviso malo";
+        $("msgAct").textContent = "No se pudo comprobar: " + e.message;
+      }).then(function () {
+        b.disabled = false; b.textContent = "Buscar ahora";
+      });
+    });
+
+    $("btnGuardarPwd").addEventListener("click", function () {
+      var v = $("nuevaPwd").value;
+      if (v.length < 4) { aviso("Usa al menos 4 caracteres.", "malo"); return; }
+      EB.lock.set(v).then(function () {
+        $("nuevaPwd").value = "";
+        bloqueo.locked = true;
+        aviso("Contraseña guardada.", "bien");
+      }).catch(function () { aviso("No se pudo guardar la contraseña.", "malo"); });
+    });
+
+    var bq = $("btnQuitarPwd");
+    if (bq) bq.addEventListener("click", function () {
+      EB.lock.clear().then(function () {
+        bloqueo.locked = false;
+        aviso("Contraseña eliminada.", "bien");
+        pintarAjustes();
+      }).catch(function () { aviso("No se pudo quitar la contraseña.", "malo"); });
+    });
+
+    Array.prototype.forEach.call(
+      $("hojaCuerpo").querySelectorAll("[data-quitar]"),
+      function (b) {
+        b.addEventListener("click", function () {
+          var id = b.getAttribute("data-quitar");
+          if (!confirm("¿Quitar esta aplicación de la pantalla de inicio?")) return;
+          EB.apps.uninstall(id).then(recargarEstado).then(function () { pintarAjustes("apps"); });
+        });
+      }
+    );
+
+    $("btnAgregar").addEventListener("click", pintarAltaDirecta);
+  }
+
+  function pintarAltaDirecta() {
+    mostrar(
+      '<h2>Agregar acceso directo</h2>' +
+      '<div class="fila apilada">' +
+        '<label for="adNombre">Nombre</label>' +
+        '<input type="text" id="adNombre" placeholder="Punto de venta">' +
+      '</div>' +
+      '<div class="fila apilada">' +
+        '<label for="adUrl">Dirección</label>' +
+        '<input type="url" id="adUrl" placeholder="https://" inputmode="url" ' +
+               'autocapitalize="off" autocorrect="off" spellcheck="false">' +
+        '<span class="ayuda">Se abrirá directo desde la pantalla de inicio. ' +
+        'Necesita Internet para funcionar.</span>' +
+        '<div class="aviso" id="msgAd" hidden></div>' +
+      '</div>' +
+      '<div class="acciones">' +
+        '<button class="btn" id="btnVolver">Volver</button>' +
+        '<button class="btn principal" id="btnCrear">Agregar</button>' +
+      '</div>'
+    );
+    $("btnVolver").addEventListener("click", function () { pintarAjustes("apps"); });
+    $("btnCrear").addEventListener("click", function () {
+      var nombre = ($("adNombre").value || "").trim();
+      var url = ($("adUrl").value || "").trim();
+      var m = $("msgAd");
+      if (!nombre || !url) {
+        m.hidden = false; m.className = "aviso malo";
+        m.textContent = "Escribe el nombre y la dirección."; return;
+      }
+      if (!/^https?:\/\//i.test(url)) url = "https://" + url;
+      var id = "acceso." + nombre.toLowerCase().replace(/[^a-z0-9]+/g, "-")
+               .replace(/^-|-$/g, "").slice(0, 40) + "." + Date.now().toString(36);
+      EB.apps.addShortcut({ app_id: id, name: nombre, url: url })
+        .then(recargarEstado)
+        .then(function () { pintarAjustes("apps"); })
+        .catch(function (e) {
+          m.hidden = false; m.className = "aviso malo";
+          m.textContent = "No se pudo agregar: " + e.message;
+        });
+    });
+  }
+
+  /* ------------------------------------------------------------- arranque */
+
+  function aplicarCortina() {
+    document.body.classList.toggle("sin-barra", !!cfg.hide_address_bar);
+  }
+
+  function pintarPie() {
+    var en = navigator.onLine;
+    $("pieInfo").innerHTML =
+      '<span class="punto' + (en ? "" : " off") + '"></span>' +
+      (en ? "Conectado" : "Sin conexión");
+  }
+  window.addEventListener("online", pintarPie);
+  window.addEventListener("offline", pintarPie);
+
+  function arrancar() {
+    pintarPie();
+    if (!EB) {
+      // Sin puente nativo: la pantalla sigue siendo usable como navegador.
+      $("vacio").hidden = false;
+      return;
+    }
+    recargarEstado()
+      .then(aplicarCortina)
+      .then(function () {
+        // Commit en dos fases: confirma que esta pantalla arranco bien.
+        // Si esto nunca se llama, el siguiente encendido revierte a la version
+        // anterior automaticamente.
+        return EB.launcher.ok();
+      })
+      .catch(function (e) {
+        console.error("arranque del lanzador", e);
+      });
+  }
+
+  if (document.readyState === "loading")
+    document.addEventListener("DOMContentLoaded", arrancar);
+  else arrancar();
+
+})();
+</script>
+</body>
+</html>

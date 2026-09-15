@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EPOS</title>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mui/3.7.1/js/mui.min.js" integrity="sha512-5LSZkoyayM01bXhnlp2T6+RLFc+dE4SIZofQMxy/ydOs3D35mgQYf6THIQrwIMmgoyjI+bqjuuj4fQcGLyJFYg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdn.bootcdn.net/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script src="https://cdn.bootcdn.net/ajax/libs/vConsole/3.9.1/vconsole.min.js"></script>
+    <!--<script src="/tests/epos/dom-to-image.js"></script>-->
+    <script src="/tests/epos/imin-printer.min.js"></script>
+    <script src="/tests/epos/epos_prn.js"></script>
+    <script src="/tests/epos/epos_prn_imin.js"></script>
+    <script src="/tests/epos/epos_prn_dantsu.js"></script>
+
+</head>
+<body style="width: 100vw; height: 100vh;">
+
+    <!--========== STYLES ==========-->
+    
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        #container { padding: 8px; display: flex; flex-wrap: wrap; }
+        .group-area { border: 1px solid #ccc; border-radius: 5px; padding: 6px; margin-top: 4px;}
+    </style>
+
+    <!--========== CONTENT ==========-->
+    
+    <p id="msg" style="width: 100%;padding: 4px; text-align: center; color: #aaa;"></p>
+    <div id="container">
+        <div class="group-area">
+            <span>alineación:</span>
+            <select id="textAlign">
+                <option value="0">Izquierda</option>
+                <option value="1">Centro</option>
+                <option value="2">Derecha</option>
+            </select>
+    
+            <label for="boldText">Negrita:</label>
+            <input type="checkbox" id="boldText">
+    
+            <label for="italicText">Cursiva:</label>
+            <input type="checkbox" id="italicText">
+    
+            <span>Tamaño(mm):</span>
+            <select id="fontSize">
+                <option value="10">10</option>
+                <option value="20">20</option>
+                <option value="30">30</option>
+                <option value="40" selected="selected">40</option>
+                <option value="50">50</option>
+                <option value="60">60</option>
+                <option value="70">70</option>
+                <option value="80">80</option>
+                <option value="90">90</option>
+                <option value="100">100</option>
+            </select>
+            
+            <textarea type="text" id="printText" placeholder="texto a imprimir" rows="6" style="padding: 4px 8px; width: 100%;margin: 8px 0;"></textarea>
+
+            <div style="text-align: end;">
+                <button id="printTextBtn">imprimir texto</button>
+            </div>
+        </div>
+
+        
+        <div class="group-area" style="display: grid; grid-template-columns: 20% 80%; ">
+            <div>
+                <svg xmlns="http://www.w3.org/2000/svg" width="80" height="80" fill="currentColor" class="bi bi-upc" viewBox="0 0 16 16">
+                    <path d="M3 4.5a.5.5 0 0 1 1 0v7a.5.5 0 0 1-1 0v-7zm2 0a.5.5 0 0 1 1 0v7a.5.5 0 0 1-1 0v-7zm2 0a.5.5 0 0 1 1 0v7a.5.5 0 0 1-1 0v-7zm2 0a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v7a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5v-7zm3 0a.5.5 0 0 1 1 0v7a.5.5 0 0 1-1 0v-7z"/>
+                  </svg>
+            </div>
+            <div>
+                <span>Ancho(2-6):</span>
+                <input type="number" value="3" id="widthBarCode" style="width: 15%;">
+                <span>Alto(1-255):</span>
+                <input type="number" value="100" id="heightBarCode" style="width: 15%;">
+                <span>Posición del contenido:</span>
+                <select id="barCodeContentAlign">
+                    <option value="0">Sin contenido</option>
+                    <option value="1">Arriba</option>
+                    <option value="2" selected="selected">Abajo</option>
+                    <option value="3">Arriba y abajo</option>
+                </select>
+                <span>Tipo:</span>
+                <select id="barCodeType">
+                    <option value="0">0</option>
+                    <option value="1">1</option>
+                    <option value="2">2</option>
+                    <option value="3">3</option>
+                    <option value="4" selected="selected">4</option>
+                    <option value="5">5</option>
+                    <option value="6">6</option>
+                </select>
+                <input type="text" style="padding: 4px; margin: 4px;" id="barCodeText" placeholder="Contenido del código de barras">
+                <div style="text-align: end;">
+                    <button id="printBarCodeBtn">imprimir código de barras</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="group-area" style="display: grid; grid-template-columns: 20% 80%; ">
+            <div style="padding: 12px;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" fill="currentColor" class="bi bi-qr-code" viewBox="0 0 16 16">
+                    <path d="M2 2h2v2H2V2Z"/>
+                    <path d="M6 0v6H0V0h6ZM5 1H1v4h4V1ZM4 12H2v2h2v-2Z"/>
+                    <path d="M6 10v6H0v-6h6Zm-5 1v4h4v-4H1Zm11-9h2v2h-2V2Z"/>
+                    <path d="M10 0v6h6V0h-6Zm5 1v4h-4V1h4ZM8 1V0h1v2H8v2H7V1h1Zm0 5V4h1v2H8ZM6 8V7h1V6h1v2h1V7h5v1h-4v1H7V8H6Zm0 0v1H2V8H1v1H0V7h3v1h3Zm10 1h-1V7h1v2Zm-1 0h-1v2h2v-1h-1V9Zm-4 0h2v1h-1v1h-1V9Zm2 3v-1h-1v1h-1v1H9v1h3v-2h1Zm0 0h3v1h-2v1h-1v-2Zm-4-1v1h1v-2H7v1h2Z"/>
+                    <path d="M7 12h1v3h4v1H7v-4Zm9 2v2h-3v-1h2v-1h1Z"/>
+                  </svg>
+            </div>
+            <div>
+                <span>Tamaño:</span>
+                <select id="qrSize">
+                    <option value="1">1</option>
+                    <option value="2">2</option>
+                    <option value="3">3</option>
+                    <option value="4">4</option>
+                    <option value="5" selected="selected">5</option>
+                    <option value="6">6</option>
+                    <option value="7">7</option>
+                    <option value="8">8</option>
+                    <option value="9">9</option>
+                </select>
+                <span>Error corrección:</span>
+                <select id="qrErrorFix">
+                    <option value="48">48</option>
+                    <option value="49">49</option>
+                    <option value="50">50</option>
+                    <option value="51" selected="selected">51</option>
+                </select>
+                <span>Posición:</span>
+                <select id="qrPosition">
+                    <option value="0">Izquierda</option>
+                    <option value="1">Centro</option>
+                    <option value="2">Derecha</option>
+                </select>
+                <input type="text" style="padding: 4px; margin: 4px;" id="qrText" placeholder="Contenido del QR">
+                <div style="text-align: end;">
+                    <button id="printQRBtn">imprimir código QR</button>
+                </div>
+            </div>
+        </div>
+        <div class="group-area" style="width: 100%;">
+            <input accept="image/png,image/jpeg" type="file" id="image">
+            <div style="text-align: end;">
+                <button id="printImgBtn">imprimir imagen</button>
+            </div>
+        </div>
+    </div> 
+
+
+
+    <!--========== SCRIPTS ==========-->
+
+    <script>
+        var vConsole = new VConsole();
+        let msg = document.getElementById("msg");
+        msg.textContent="No conectado";
+
+        var values = window.location.search;
+        var params = new URLSearchParams(values);
+
+        let defCnn = {
+            driver:"generic",
+            type:"ethernet",    // bluetooth, ethernet, usb
+            address:"192.168.0.87",
+            port:9100,
+            timeout:15,
+            dpi:203,
+            printWidth:60,
+            charsPerLine:46
+        }
+
+        let iminCnn = { 
+            driver:"imin",
+            type:"ethernet",
+            address:"127.0.0.1",
+            port:8080,
+            timeout:15,
+            dpi:203,
+            printWidth:60,
+            charsPerLine:46
+        }
+
+        const connection = params != null & params.get("printer") != null && params.get("printer") == "imin" ? iminCnn : defCnn;
+
+        // CONEXIÓN
+        eposprn.connect(connection, function(status){
+
+            console.log(JSON.stringify(status));
+            msg.textContent=status;
+
+            let text="Texto ";
+
+            //Alinear texto (0=Izquierda, 1=Centro y 2=derecha)
+            eposprn.setAlign(0);
+            eposprn.printText(text+"alineado a la izquierda");
+            eposprn.setAlign(1);
+            eposprn.printText(text+"alineado al centro");
+            eposprn.setAlign(2);
+            eposprn.printText(text+"alineado a la derecha");
+
+            // Estilos de texto
+            eposprn.setAlign(0);
+            eposprn.setFontBold(false);
+            eposprn.printText(text+"normal");
+
+            eposprn.setAlign(1);
+            eposprn.setFontBold(true);
+            eposprn.printText(text+"en negrita alineado al centro");
+
+            eposprn.setAlign(2);
+            eposprn.setFontItalic(true);
+            eposprn.printText(text+"en cursiva alineado a la derecha");
+
+            eposprn.setAlign(0);
+            eposprn.setFontUnderline(true);
+            eposprn.printText(text+"subrayado alineado a la izquierda");
+
+            // Tamaños de texto
+            eposprn.setFontSize(10);
+            eposprn.printText(text+"1x");
+            eposprn.setFontSize(20);
+            eposprn.printText(text+"2x");
+            eposprn.setFontSize(30);
+            eposprn.printText(text+"3x");
+            eposprn.setFontSize(40);
+            eposprn.printText(text+"4x");
+            eposprn.setFontSize(50);
+            eposprn.printText(text+"5x");
+            eposprn.setFontSize(60);
+            eposprn.printText(text+"6x");
+            eposprn.setFontSize(70);
+            eposprn.printText(text+"7x");
+
+            // Código de barras (with: 2-6 / height: 1-255 / contentPosition: 0=sin contenido, 1=arriba, 2=abajo, 3=arriba y abajo / type: 0-6)
+            let std1 = { width : 4, height : 100, contentPosition : 2, type : 0 }
+            let data1 = "831254784551";
+            eposprn.printBarcode(std1, data1);
+
+            // Código QR (size: 1-9 / error_correction: 48-51 / position: 0 = izquierda, 1 = centro, 2 = derecha)
+            let std2 = { size : 5, error_correction : 51, position : 0 }
+            let data2 = "https://deminus-tm-beta.induxsoft.net/?view=vw_principal";
+            eposprn.printQr(std2, data2);
+
+            // Imprimir imagen
+
+            // Cortar
+            //eposprn.cut();
+
+            // Abrir cajón
+            //eposprn.openCashDrawer();
+
+        },function(errmsg){
+            msg.textContent="No se pudo conectar al driver especificado";
+        });
+
+        // OPERACIONES CON LA IMPRESORA:
+
+        // Alinear texto
+        var textAlign = document.getElementById("textAlign");
+        if(textAlign) textAlign.addEventListener("change", (e) => {
+            eposprn.setAlign(e.target.value);
+        });
+
+        // Texto en negrita
+        var boldText = document.getElementById("boldText");
+        if(boldText) boldText.addEventListener("change", (e) => {
+            eposprn.setFontBold(e.target.checked);
+        });
+
+        // Texto en cursiva
+        var italicText = document.getElementById("italicText");
+        if(italicText) italicText.addEventListener("change", (e) => {
+            eposprn.setFontItalic(e.target.checked);
+        });
+
+        // Tamaño del texto
+        var fontSize = document.getElementById("fontSize");
+        if(fontSize) fontSize.addEventListener("change", (e) => {
+            eposprn.setFontSize(e.target.value);
+        })
+
+        // Imprimir Texto
+        var printTextBtn = document.getElementById("printTextBtn");
+        if(printTextBtn) printTextBtn.addEventListener('click', () => {
+            let text = document.getElementById("printText").value;
+            eposprn.printText(text);
+        });
+
+        // Imprimir Codigo de barras
+        var printBarCodeBtn = document.getElementById("printBarCodeBtn");
+        if(printBarCodeBtn) printBarCodeBtn.addEventListener("click", () => {
+            let std = {
+                width : document.getElementById("widthBarCode").value,
+                height : document.getElementById("heightBarCode").value,
+                contentPosition : document.getElementById("barCodeContentAlign").value,
+                type : document.getElementById("barCodeType").value
+            }
+            let data = document.getElementById("barCodeText").value;
+            eposprn.printBarcode(std, data);
+        });
+
+        // Imprimir QR
+        var printQRBtn = document.getElementById("printQRBtn");
+        if(printQRBtn) printQRBtn.addEventListener("click", () => {
+            let std = {
+                size : document.getElementById("qrSize").value,
+                error_correction : document.getElementById("qrErrorFix").value,
+                position : document.getElementById("qrPosition").value
+            }
+            let data = document.getElementById("qrText").value;
+            eposprn.printQr(std, data);
+        });
+
+        // Imprimir imagen
+        var printImgBtn = document.getElementById("printImgBtn");
+        if(printImgBtn) printImgBtn.addEventListener("click", () => {
+            var file = document.getElementById("image").files[0];
+            var reader = new FileReader();
+
+            reader.addEventListener("load", () => { eposprn.printImage(reader.result); }, false);
+            if (file){ reader.readAsDataURL(file); }
+        });
+    </script>
+</body>
+</html>
