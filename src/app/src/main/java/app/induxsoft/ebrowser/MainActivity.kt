@@ -118,8 +118,22 @@ class MainActivity : AppCompatActivity(), ConsentProvider, NativeBridge.Host {
 
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
-                if (web.canGoBack()) web.goBack()
-                else { isEnabled = false; onBackPressedDispatcher.onBackPressed() }
+                when {
+                    web.canGoBack() -> web.goBack()
+                    // Ya en el lanzador y sin historial: se deja que el sistema
+                    // decida (minimizar/salir), como cualquier app de Android.
+                    currentUrl.startsWith(Constants.LAUNCHER_ORIGIN) -> {
+                        isEnabled = false; onBackPressedDispatcher.onBackPressed()
+                    }
+                    // Dentro de una aplicacion (instalada o abierta por "Abrir
+                    // una aplicacion al encender"), sin historial propio que
+                    // deshacer: el manual promete que el boton de retroceso
+                    // regresa a la pantalla de inicio, y eso debe cumplirse
+                    // aunque la pagina no implemente su propio boton de salir
+                    // ni tenga historial de navegacion todavia (justo el caso
+                    // de arranque con "Abrir una aplicacion al encender").
+                    else -> goLauncher()
+                }
             }
         })
 
